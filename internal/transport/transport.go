@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+// Config configures a Client.
 type Config struct {
 	BaseURL    string
 	APIKey     string
@@ -23,12 +24,15 @@ type Config struct {
 	Timeout    time.Duration
 }
 
+// Client is the shared HTTP layer one TreasuryClient or MerchantClient
+// builds on.
 type Client struct {
 	baseURL    string
 	apiKey     string
 	httpClient *http.Client
 }
 
+// New builds a Client from cfg.
 func New(cfg Config) *Client {
 	httpClient := cfg.HTTPClient
 	if httpClient == nil {

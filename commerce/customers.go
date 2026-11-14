@@ -63,6 +63,7 @@ func NewCustomers(t *transport.Client) *Customers {
 	return &Customers{transport: t}
 }
 
+// RegisterCustomerRequest identifies a customer to register.
 type RegisterCustomerRequest struct {
 	ExternalID string
 	// Email is lower-cased by the server; where consent links go.

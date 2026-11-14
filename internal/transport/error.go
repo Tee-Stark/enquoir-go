@@ -19,6 +19,7 @@ type Error struct {
 	RetryAfter time.Duration
 }
 
+// Error implements the error interface.
 func (e *Error) Error() string {
 	code := e.Code
 	if code == "" {

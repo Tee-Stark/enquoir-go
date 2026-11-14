@@ -5,5 +5,8 @@ package openapi
 
 import _ "embed"
 
+// Spec is openapi.yaml, the OpenAPI 3.1 description of every route
+// Enquoir serves.
+//
 //go:embed openapi.yaml
 var Spec []byte

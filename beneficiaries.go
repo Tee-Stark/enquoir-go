@@ -45,6 +45,7 @@ type RegisterBeneficiaryRequest struct {
 	Address         Address
 }
 
+// RegisterBeneficiaryResponse is the registered payee's identifiers.
 type RegisterBeneficiaryResponse struct {
 	// ID is the rail's beneficiary ID. Use it as a payment's Payee.
 	ID string

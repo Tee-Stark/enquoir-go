@@ -81,6 +81,7 @@ type SubmitIntentRequest struct {
 	Reason string
 }
 
+// SubmitIntentResponse is what a Submit call actually did.
 type SubmitIntentResponse struct {
 	// Key is the intent key. The same intent always gets the same key.
 	Key     string

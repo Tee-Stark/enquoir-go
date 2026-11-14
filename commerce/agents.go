@@ -64,6 +64,7 @@ func NewMerchantAgents(t *transport.Client) *MerchantAgents {
 	return &MerchantAgents{transport: t}
 }
 
+// RegisterMerchantAgentRequest identifies an agent to register.
 type RegisterMerchantAgentRequest struct {
 	ExternalID string
 	Name       string
