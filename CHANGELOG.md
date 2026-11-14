@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.1.0] - 2026-11-14
 
 ### Added
 
@@ -27,5 +27,24 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   → poll to terminal) and `examples/commerce-checkout` (commerce, submit →
   authorize → issue grant → redeem → report outcome, against an existing
   active mandate).
+- GitHub Actions CI: build, vet, test, `gofmt`, and `sync-openapi.sh
+  --check` against a sibling checkout of the backend repo.
 
-[Unreleased]: https://github.com/Tee-Stark/enquoir-go/commits/main
+### Verified live, before this tag
+
+- `examples/commerce-checkout` ran end to end against a real local
+  sandbox: registered a customer, agent and funding method; requested a
+  mandate and approved its emailed consent link; submitted a checkout
+  (authorized); issued and redeemed its grant; reported the outcome as
+  succeeded. Every commerce method on that path was exercised for real,
+  not just against table-driven test fixtures.
+- `examples/submit-payment` was **not** verified live for this tag: the
+  backend's Airwallex sandbox credentials were returning `403 Forbidden`
+  on login itself at release time, an external/environment issue
+  unrelated to the SDK (confirmed via the backend's own attempt records;
+  the SDK's request was correctly formed up to that point). Treasury's
+  full behavior is still covered by its table-driven unit and
+  contract-validation tests. Re-verify live once the sandbox credentials
+  are rotated.
+
+[0.1.0]: https://github.com/Tee-Stark/enquoir-go/releases/tag/v0.1.0
