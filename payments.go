@@ -5,17 +5,24 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/Tee-Stark/enquoir-go/internal/money"
 	"github.com/Tee-Stark/enquoir-go/internal/transport"
 )
 
 // Currency is one of the three currencies Enquoir supports.
-type Currency string
+type Currency = money.Currency
 
 const (
-	USD Currency = "USD"
-	EUR Currency = "EUR"
-	GBP Currency = "GBP"
+	USD = money.USD
+	EUR = money.EUR
+	GBP = money.GBP
 )
+
+// Money carries an amount exactly as the wire sent it: integer minor
+// units alongside the decimal string the API also sends, never
+// reformatted or re-derived - there is no safe reason for the SDK to
+// touch money's own representation.
+type Money = money.Money
 
 // PaymentState is where a payment, or one step of its history, stands in
 // its lifecycle. APPLIED and BLOCKED are final.
