@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out enquoir-go
+        uses: actions/checkout@v4
+        with:
+          path: enquoir-go
+
+      # scripts/sync-openapi.sh --check compares the vendored spec
+      # against the backend's own copy at ../enquoir (relative to this
+      # repo) - check that sibling repo out too so drift is actually
+      # caught in CI, not just locally.
+      - name: Check out enquoir (backend, for the vendored spec)
+        uses: actions/checkout@v4
+        with:
+          repository: Tee-Stark/enquoir
+          path: enquoir
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: enquoir-go/go.mod
+
+      - name: Build
+        working-directory: enquoir-go
+        run: go build ./...
+
+      - name: Vet
+        working-directory: enquoir-go
+        run: go vet ./...
+
+      - name: Test
+        working-directory: enquoir-go
+        run: go test ./...
+
+      - name: Check formatting
+        working-directory: enquoir-go
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "gofmt needs to be run on:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Check vendored OpenAPI spec is up to date
+        working-directory: enquoir-go
+        run: ./scripts/sync-openapi.sh --check ../enquoir
