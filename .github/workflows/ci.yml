@@ -28,6 +28,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: enquoir-go/go.mod
+          cache-dependency-path: enquoir-go/go.sum
 
       - name: Build
         working-directory: enquoir-go
