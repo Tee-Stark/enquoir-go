@@ -172,6 +172,36 @@ func TestDo_NonProblem5xxBodyIsStillAnAPIError(t *testing.T) {
 	if apiErr.Status != http.StatusBadGateway {
 		t.Errorf("Status = %d, want %d", apiErr.Status, http.StatusBadGateway)
 	}
+	if apiErr.Detail != "<html>502 Bad Gateway</html>" {
+		t.Errorf("Detail = %q, want the raw body preserved", apiErr.Detail)
+	}
+}
+
+func TestDo_ValidJSONThatIsNotAProblemIsStillAnAPIError(t *testing.T) {
+	// A proxy's own JSON error body (unlike the HTML case above) still
+	// decodes successfully - it just has none of Problem's required
+	// fields. The body must not be silently dropped just because it
+	// happened to parse as JSON.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte(`{"message":"Internal server error"}`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{BaseURL: srv.URL, APIKey: "k"})
+	err := c.Do(context.Background(), http.MethodPost, "/v1/intents", map[string]string{}, nil)
+
+	apiErr, ok := err.(*Error)
+	if !ok {
+		t.Fatalf("err = %T, want *Error", err)
+	}
+	if apiErr.Code != "" {
+		t.Errorf("Code = %q, want empty (not a real Problem code)", apiErr.Code)
+	}
+	if apiErr.Detail != `{"message":"Internal server error"}` {
+		t.Errorf("Detail = %q, want the raw body preserved", apiErr.Detail)
+	}
 }
 
 func TestNew_TrimsTrailingSlashFromBaseURL(t *testing.T) {
@@ -182,12 +212,12 @@ func TestNew_TrimsTrailingSlashFromBaseURL(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c := New(Config{BaseURL: srv.URL + "/", APIKey: "k"})
+	c := New(Config{BaseURL: srv.URL + "//", APIKey: "k"})
 	if err := c.Do(context.Background(), http.MethodGet, "/v1/intents/abc", nil, nil); err != nil {
 		t.Fatalf("Do: %v", err)
 	}
 	if gotPath != "/v1/intents/abc" {
-		t.Errorf("request path = %q, want %q (a trailing slash on BaseURL must not double up)", gotPath, "/v1/intents/abc")
+		t.Errorf("request path = %q, want %q (every trailing slash on BaseURL must be trimmed)", gotPath, "/v1/intents/abc")
 	}
 }
 

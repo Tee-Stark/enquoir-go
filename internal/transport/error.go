@@ -44,13 +44,16 @@ func newError(status int, header http.Header, body []byte) error {
 		Code   string `json:"code"`
 		Field  string `json:"field"`
 	}
-	if err := json.Unmarshal(body, &problem); err != nil {
-		// A load balancer or proxy can answer with a 5xx that isn't
-		// Enquoir's own Problem+JSON (an HTML error page, or nothing).
-		// This is exactly the transient failure GET retries exist for,
-		// so it still comes back as an *Error - not some other type
-		// retryable() and IsCode can't recognize - carrying what
-		// Status it can.
+	// Code is required on every real Problem; an empty one means the
+	// body either failed to decode as JSON at all, or decoded cleanly
+	// into something that merely isn't a Problem (a proxy's own JSON
+	// error body, `{"message":"..."}` say, or a bare `null`) - both
+	// are a load balancer or intermediary's own 5xx, not Enquoir's.
+	// This is exactly the transient failure GET retries exist for, so
+	// it still comes back as an *Error - not some other type
+	// retryable() and IsCode can't recognize - carrying what Status it
+	// can and the raw body, truncated, so nothing is silently lost.
+	if err := json.Unmarshal(body, &problem); err != nil || problem.Code == "" {
 		detail := string(body)
 		if len(detail) > maxNonProblemBodyInError {
 			detail = detail[:maxNonProblemBodyInError] + "..."

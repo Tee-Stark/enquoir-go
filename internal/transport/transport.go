@@ -42,7 +42,7 @@ func New(cfg Config) *Client {
 		// Every path this client builds already starts with "/", so a
 		// trailing slash on BaseURL (a realistic WithBaseURL input)
 		// would otherwise double up into "//v1/..." and 404.
-		baseURL:    strings.TrimSuffix(cfg.BaseURL, "/"),
+		baseURL:    strings.TrimRight(cfg.BaseURL, "/"),
 		apiKey:     cfg.APIKey,
 		httpClient: httpClient,
 	}
