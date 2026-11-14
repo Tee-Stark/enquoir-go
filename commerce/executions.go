@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Tee-Stark/enquoir-go/internal/money"
 	"github.com/Tee-Stark/enquoir-go/internal/transport"
 )
 
@@ -170,9 +169,10 @@ func (e *Executions) Get(ctx context.Context, id string) (*ExecutionDetail, erro
 	return out.toExecutionDetail()
 }
 
-// ExecutionListOptions filters and pages List. Status
-// ExecutionUnknown is the reconciliation queue - executions whose
-// outcome needs a PSP lookup and a Reconcile call.
+// ExecutionListOptions filters and pages List. Zero values mean "no
+// filter" or "use the server's default." Status ExecutionUnknown is
+// the reconciliation queue - executions whose outcome needs a PSP
+// lookup and a Reconcile call.
 type ExecutionListOptions struct {
 	Status    ExecutionStatus
 	MandateID string
@@ -238,7 +238,7 @@ type ReportOutcomeRequest struct {
 	// report instead of a direct one.
 	ProviderEventID string
 	AmountMinor     int64
-	Currency        money.Currency
+	Currency        Currency
 	// FailureReason is e.g. the PSP's decline code - never card data.
 	FailureReason string
 }
@@ -279,7 +279,7 @@ type ReconcileRequest struct {
 	Provider                 string
 	ProviderPaymentReference string
 	AmountMinor              int64
-	Currency                 money.Currency
+	Currency                 Currency
 	FailureReason            string
 }
 

@@ -10,6 +10,27 @@ import (
 	"github.com/Tee-Stark/enquoir-go/internal/transport"
 )
 
+func TestPaymentState_Terminal(t *testing.T) {
+	tests := []struct {
+		state PaymentState
+		want  bool
+	}{
+		{StateProposed, false},
+		{StateAwaitingApproval, false},
+		{StateAuthorized, false},
+		{StateInFlight, false},
+		{StateUnknown, false},
+		{StateFailed, false}, // not terminal: a reconciler may still re-authorize or block it.
+		{StateApplied, true},
+		{StateBlocked, true},
+	}
+	for _, tt := range tests {
+		if got := tt.state.Terminal(); got != tt.want {
+			t.Errorf("%s.Terminal() = %v, want %v", tt.state, got, tt.want)
+		}
+	}
+}
+
 func problemHandler(status int, code, detail string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")

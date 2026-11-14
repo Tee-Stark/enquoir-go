@@ -12,6 +12,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -38,15 +39,20 @@ func New(cfg Config) *Client {
 		httpClient = &http.Client{Timeout: timeout}
 	}
 	return &Client{
-		baseURL:    cfg.BaseURL,
+		// Every path this client builds already starts with "/", so a
+		// trailing slash on BaseURL (a realistic WithBaseURL input)
+		// would otherwise double up into "//v1/..." and 404.
+		baseURL:    strings.TrimSuffix(cfg.BaseURL, "/"),
 		apiKey:     cfg.APIKey,
 		httpClient: httpClient,
 	}
 }
 
 const (
-	maxReadRetries = 3
-	retryBaseDelay = 200 * time.Millisecond
+	// maxReadAttempts is the total number of tries a GET gets - the
+	// first try plus up to maxReadAttempts-1 retries.
+	maxReadAttempts = 3
+	retryBaseDelay  = 200 * time.Millisecond
 )
 
 // Do sends one API call. GET requests get capped retries on network errors
@@ -66,7 +72,7 @@ func (c *Client) Do(ctx context.Context, method, path string, body, out any) err
 
 	attempts := 1
 	if method == http.MethodGet {
-		attempts = maxReadRetries
+		attempts = maxReadAttempts
 	}
 
 	var lastErr error

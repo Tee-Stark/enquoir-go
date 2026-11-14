@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Tee-Stark/enquoir-go/internal/money"
 	"github.com/Tee-Stark/enquoir-go/internal/transport"
 )
 
@@ -51,7 +50,7 @@ type NamedRef struct {
 // MandateScope is a mandate request's proposed spending limits, all in
 // integer minor units (cents) to match the API - no floats for money.
 type MandateScope struct {
-	Currency            money.Currency
+	Currency            Currency
 	MaxTransactionMinor int64
 	MaxCumulativeMinor  int64
 	// MaxTransactions is the most purchases allowed; 0 means no limit.
@@ -186,7 +185,7 @@ func (w mandateTermsWire) toMandateTerms() (*MandateTerms, error) {
 		},
 		ApprovalMode: ApprovalMode(w.ApprovalMode),
 		Scope: MandateScope{
-			Currency:            money.Currency(w.Scope.Currency),
+			Currency:            Currency(w.Scope.Currency),
 			MaxTransactionMinor: w.Scope.MaxTransactionMinor,
 			MaxCumulativeMinor:  w.Scope.MaxCumulativeMinor,
 			MaxTransactions:     maxTransactions,
@@ -408,7 +407,8 @@ func (m *Mandates) Revoke(ctx context.Context, id string) (*Mandate, error) {
 	return out.toMandate()
 }
 
-// MandateListOptions filters and pages List.
+// MandateListOptions filters and pages List. Zero values mean "no
+// filter" or "use the server's default."
 type MandateListOptions struct {
 	CustomerID string
 	Status     MandateStatus

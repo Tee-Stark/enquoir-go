@@ -173,6 +173,26 @@ func TestMandates_Get_Success(t *testing.T) {
 	validateResponse(t, http.MethodGet, capturedPath, http.StatusOK, http.Header{"Content-Type": {"application/json"}}, body)
 }
 
+func TestMandates_Get_WithNullUsage(t *testing.T) {
+	// "usage ... null elsewhere" (openapi.yaml): toMandate's nil branch
+	// must leave MandateUsage at its documented zero value, not some
+	// stale or undefined state.
+	m := newTestMandates(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fixture := mandateFixture()
+		fixture["usage"] = nil
+		json.NewEncoder(w).Encode(fixture)
+	})
+
+	mandate, err := m.Get(context.Background(), "man_1")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if mandate.Usage != (MandateUsage{}) {
+		t.Errorf("Get.Usage = %+v, want the zero value", mandate.Usage)
+	}
+}
+
 func TestMandates_Get_Errors(t *testing.T) {
 	tests := []struct {
 		name   string

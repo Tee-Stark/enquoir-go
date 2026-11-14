@@ -18,14 +18,10 @@ const (
 	GBP = money.GBP
 )
 
-// Money carries an amount exactly as the wire sent it: integer minor
-// units alongside the decimal string the API also sends, never
-// reformatted or re-derived - there is no safe reason for the SDK to
-// touch money's own representation.
-type Money = money.Money
-
 // PaymentState is where a payment, or one step of its history, stands in
-// its lifecycle. APPLIED and BLOCKED are final.
+// its lifecycle. APPLIED and BLOCKED are final; FAILED is deliberately
+// not - a reconciler may still re-authorize a failed attempt, or give
+// up and block it.
 type PaymentState string
 
 const (
@@ -38,6 +34,14 @@ const (
 	StateFailed           PaymentState = "FAILED"
 	StateBlocked          PaymentState = "BLOCKED"
 )
+
+// Terminal reports whether nothing more will happen to a payment in
+// this state. Only APPLIED and BLOCKED are terminal - notably not
+// FAILED, which can still move on. A poll loop should stop on this,
+// not on a hand-picked set of states.
+func (s PaymentState) Terminal() bool {
+	return s == StateApplied || s == StateBlocked
+}
 
 // SubmitOutcome says what a Submit call actually did.
 type SubmitOutcome string

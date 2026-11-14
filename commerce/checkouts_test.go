@@ -57,7 +57,7 @@ func TestCheckouts_Submit_Success(t *testing.T) {
 
 	checkout, err := c.Submit(context.Background(), SubmitCheckoutRequest{
 		ExternalID: "ext-1", MandateID: "man_1", CustomerID: "cus_1", AgentID: "cag_1", FundingMethodID: "fmb_1",
-		Checkout: CheckoutLines{
+		Lines: CheckoutLines{
 			Currency: money.USD, TotalMinor: 1150, ShippingMinor: 100, TaxMinor: 50,
 			Items: []CheckoutItem{{ProductID: "prod_1", Name: "Widget", Category: "electronics", Quantity: 2, UnitPriceMinor: 500}},
 		},
@@ -68,8 +68,8 @@ func TestCheckouts_Submit_Success(t *testing.T) {
 	if checkout.ID != "chk_1" || checkout.Status != CheckoutAuthorized || !checkout.Decision.Allowed {
 		t.Errorf("Submit = %+v", checkout)
 	}
-	if len(checkout.Checkout.Items) != 1 || checkout.Checkout.Items[0].ProductID != "prod_1" {
-		t.Errorf("Submit.Checkout.Items = %+v", checkout.Checkout.Items)
+	if len(checkout.Snapshot.Items) != 1 || checkout.Snapshot.Items[0].ProductID != "prod_1" {
+		t.Errorf("Submit.Snapshot.Items = %+v", checkout.Snapshot.Items)
 	}
 
 	validateRequest(t, http.MethodPost, capturedPath, capturedReq)
@@ -91,7 +91,7 @@ func TestCheckouts_Submit_Denied(t *testing.T) {
 
 	checkout, err := c.Submit(context.Background(), SubmitCheckoutRequest{
 		ExternalID: "ext-1", MandateID: "man_1", CustomerID: "cus_1", AgentID: "cag_1", FundingMethodID: "fmb_1",
-		Checkout: CheckoutLines{Currency: money.USD, TotalMinor: 1150},
+		Lines: CheckoutLines{Currency: money.USD, TotalMinor: 1150},
 	})
 	if err != nil {
 		t.Fatalf("Submit: %v", err)
@@ -122,7 +122,7 @@ func TestCheckouts_Submit_Errors(t *testing.T) {
 			c := newTestCheckouts(t, problemHandler(tt.status, tt.code, "boom"))
 			_, err := c.Submit(context.Background(), SubmitCheckoutRequest{
 				ExternalID: "ext-1", MandateID: "man_1", CustomerID: "cus_1", AgentID: "cag_1", FundingMethodID: "fmb_1",
-				Checkout: CheckoutLines{Currency: money.USD, TotalMinor: 1150},
+				Lines: CheckoutLines{Currency: money.USD, TotalMinor: 1150},
 			})
 			if code := apiErrorCode(err); code != tt.code {
 				t.Errorf("Submit error code = %q, want %q", code, tt.code)

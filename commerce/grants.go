@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Tee-Stark/enquoir-go/internal/money"
 	"github.com/Tee-Stark/enquoir-go/internal/transport"
 )
 
@@ -43,7 +42,7 @@ type Execution struct {
 	CheckoutHash             string
 	MandateID                string
 	AmountMinor              int64
-	Currency                 money.Currency
+	Currency                 Currency
 	FundingMethod            ExecutionFundingMethod
 	Status                   ExecutionStatus
 	ProviderPaymentReference string
@@ -114,7 +113,7 @@ func (w executionWire) toExecution() (*Execution, error) {
 		CheckoutHash:       w.CheckoutHash,
 		MandateID:          w.MandateID,
 		AmountMinor:        w.AmountMinor,
-		Currency:           money.Currency(w.Currency),
+		Currency:           Currency(w.Currency),
 		FundingMethod: ExecutionFundingMethod{
 			ID:                      w.FundingMethod.ID,
 			Provider:                w.FundingMethod.Provider,

@@ -66,8 +66,7 @@ func main() {
 		}
 		log.Printf("intent %s: state=%s", detail.Key, detail.State)
 
-		switch detail.State {
-		case enquoir.StateApplied, enquoir.StateFailed, enquoir.StateBlocked:
+		if detail.State.Terminal() {
 			log.Printf("intent %s reached a terminal state: %s", detail.Key, detail.State)
 			return
 		}

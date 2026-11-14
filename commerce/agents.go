@@ -115,7 +115,8 @@ func (a *MerchantAgents) Enable(ctx context.Context, id string) (*MerchantAgent,
 	return out.toMerchantAgent()
 }
 
-// MerchantAgentListOptions filters and pages List.
+// MerchantAgentListOptions filters and pages List. Zero values mean
+// "no filter" or "use the server's default."
 type MerchantAgentListOptions struct {
 	ExternalID string
 	Status     CommerceStatus

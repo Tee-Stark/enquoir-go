@@ -124,6 +124,73 @@ func TestDo_GETDoesNotRetryOn4xx(t *testing.T) {
 	}
 }
 
+func TestDo_GETRetriesOn5xxWithNonProblemBody(t *testing.T) {
+	attempts := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if attempts < 2 {
+			// A load balancer or proxy's own error page, not Enquoir's
+			// Problem+JSON - exactly the transient failure GET retries
+			// exist for.
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(http.StatusBadGateway)
+			w.Write([]byte("<html>502 Bad Gateway</html>"))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"key": "abc"})
+	}))
+	defer srv.Close()
+
+	c := New(Config{BaseURL: srv.URL, APIKey: "k"})
+	var out struct {
+		Key string `json:"key"`
+	}
+	if err := c.Do(context.Background(), http.MethodGet, "/v1/intents/abc", nil, &out); err != nil {
+		t.Fatalf("Do: %v", err)
+	}
+	if attempts != 2 {
+		t.Errorf("attempts = %d, want 2 (a non-Problem 5xx body must still be retried)", attempts)
+	}
+}
+
+func TestDo_NonProblem5xxBodyIsStillAnAPIError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte("<html>502 Bad Gateway</html>"))
+	}))
+	defer srv.Close()
+
+	c := New(Config{BaseURL: srv.URL, APIKey: "k"})
+	err := c.Do(context.Background(), http.MethodPost, "/v1/intents", map[string]string{}, nil)
+
+	apiErr, ok := err.(*Error)
+	if !ok {
+		t.Fatalf("err = %T, want *Error", err)
+	}
+	if apiErr.Status != http.StatusBadGateway {
+		t.Errorf("Status = %d, want %d", apiErr.Status, http.StatusBadGateway)
+	}
+}
+
+func TestNew_TrimsTrailingSlashFromBaseURL(t *testing.T) {
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	c := New(Config{BaseURL: srv.URL + "/", APIKey: "k"})
+	if err := c.Do(context.Background(), http.MethodGet, "/v1/intents/abc", nil, nil); err != nil {
+		t.Fatalf("Do: %v", err)
+	}
+	if gotPath != "/v1/intents/abc" {
+		t.Errorf("request path = %q, want %q (a trailing slash on BaseURL must not double up)", gotPath, "/v1/intents/abc")
+	}
+}
+
 func TestDo_ParsesProblemIntoError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")

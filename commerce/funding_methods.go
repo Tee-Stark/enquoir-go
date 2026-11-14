@@ -166,7 +166,8 @@ func (f *FundingMethods) Enable(ctx context.Context, id string) (*FundingMethod,
 	return out.toFundingMethod()
 }
 
-// FundingMethodListOptions filters and pages ListForCustomer.
+// FundingMethodListOptions filters and pages ListForCustomer. Zero
+// values mean "no filter" or "use the server's default."
 type FundingMethodListOptions struct {
 	Status CommerceStatus
 	Limit  int

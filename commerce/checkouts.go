@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Tee-Stark/enquoir-go/internal/money"
 	"github.com/Tee-Stark/enquoir-go/internal/transport"
 )
 
@@ -86,7 +85,7 @@ type CheckoutItem struct {
 // units: TotalMinor must equal the items (quantity times unit price)
 // plus ShippingMinor, TaxMinor and FeesMinor, and be positive.
 type CheckoutLines struct {
-	Currency      money.Currency
+	Currency      Currency
 	Items         []CheckoutItem
 	ShippingMinor int64
 	TaxMinor      int64
@@ -138,12 +137,14 @@ type Authorization struct {
 // Checkout is one purchase a merchant's agent proposed, and its
 // decision against the named mandate.
 type Checkout struct {
-	ID           string
-	ExternalID   string
-	MandateID    string
-	Status       CheckoutStatus
-	Decision     Decision
-	Checkout     CheckoutSnapshot
+	ID         string
+	ExternalID string
+	MandateID  string
+	Status     CheckoutStatus
+	Decision   Decision
+	// Snapshot is everything the checkout froze: the parties and the
+	// priced contents it was evaluated against.
+	Snapshot     CheckoutSnapshot
 	CheckoutHash string
 	CreatedAt    time.Time
 	DecidedAt    *time.Time
@@ -194,7 +195,7 @@ func (w checkoutSnapshotWire) toCheckoutSnapshot() CheckoutSnapshot {
 		AgentID:         w.AgentID,
 		FundingMethodID: w.FundingMethodID,
 		CheckoutLines: CheckoutLines{
-			Currency:      money.Currency(w.Currency),
+			Currency:      Currency(w.Currency),
 			Items:         items,
 			ShippingMinor: w.ShippingMinor,
 			TaxMinor:      w.TaxMinor,
@@ -274,7 +275,7 @@ type checkoutWire struct {
 	MandateID         string               `json:"mandate_id"`
 	Status            string               `json:"status"`
 	Decision          decisionWire         `json:"decision"`
-	Checkout          checkoutSnapshotWire `json:"checkout"`
+	Snapshot          checkoutSnapshotWire `json:"checkout"`
 	CheckoutHash      string               `json:"checkout_hash"`
 	CreatedAt         string               `json:"created_at"`
 	DecidedAt         *string              `json:"decided_at"`
@@ -315,7 +316,7 @@ func (w checkoutWire) toCheckout() (*Checkout, error) {
 		MandateID:         w.MandateID,
 		Status:            CheckoutStatus(w.Status),
 		Decision:          w.Decision.toDecision(),
-		Checkout:          w.Checkout.toCheckoutSnapshot(),
+		Snapshot:          w.Snapshot.toCheckoutSnapshot(),
 		CheckoutHash:      w.CheckoutHash,
 		CreatedAt:         createdAt,
 		DecidedAt:         decidedAt,
@@ -345,7 +346,7 @@ type SubmitCheckoutRequest struct {
 	CustomerID      string
 	AgentID         string
 	FundingMethodID string
-	Checkout        CheckoutLines
+	Lines           CheckoutLines
 }
 
 // Submit submits a checkout for evaluation against MandateID. The
@@ -359,7 +360,7 @@ func (c *Checkouts) Submit(ctx context.Context, req SubmitCheckoutRequest) (*Che
 		CustomerID      string `json:"customer_id"`
 		AgentID         string `json:"agent_id"`
 		FundingMethodID string `json:"funding_method_id"`
-		Checkout        struct {
+		Lines           struct {
 			Currency      string             `json:"currency"`
 			Items         []checkoutItemWire `json:"items"`
 			ShippingMinor int64              `json:"shipping_minor"`
@@ -374,14 +375,14 @@ func (c *Checkouts) Submit(ctx context.Context, req SubmitCheckoutRequest) (*Che
 		AgentID:         req.AgentID,
 		FundingMethodID: req.FundingMethodID,
 	}
-	wire.Checkout.Currency = string(req.Checkout.Currency)
-	wire.Checkout.ShippingMinor = req.Checkout.ShippingMinor
-	wire.Checkout.TaxMinor = req.Checkout.TaxMinor
-	wire.Checkout.FeesMinor = req.Checkout.FeesMinor
-	wire.Checkout.TotalMinor = req.Checkout.TotalMinor
-	wire.Checkout.Items = make([]checkoutItemWire, len(req.Checkout.Items))
-	for i, it := range req.Checkout.Items {
-		wire.Checkout.Items[i] = checkoutItemWire{
+	wire.Lines.Currency = string(req.Lines.Currency)
+	wire.Lines.ShippingMinor = req.Lines.ShippingMinor
+	wire.Lines.TaxMinor = req.Lines.TaxMinor
+	wire.Lines.FeesMinor = req.Lines.FeesMinor
+	wire.Lines.TotalMinor = req.Lines.TotalMinor
+	wire.Lines.Items = make([]checkoutItemWire, len(req.Lines.Items))
+	for i, it := range req.Lines.Items {
+		wire.Lines.Items[i] = checkoutItemWire{
 			ProductID:      it.ProductID,
 			Name:           it.Name,
 			Category:       it.Category,
@@ -433,7 +434,8 @@ func (c *Checkouts) IssueGrant(ctx context.Context, id string) (*Checkout, error
 	return out.toCheckout()
 }
 
-// CheckoutListOptions filters and pages List.
+// CheckoutListOptions filters and pages List. Zero values mean "no
+// filter" or "use the server's default."
 type CheckoutListOptions struct {
 	MandateID  string
 	CustomerID string

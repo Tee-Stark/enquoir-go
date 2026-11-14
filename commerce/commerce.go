@@ -5,7 +5,22 @@
 // not off this package, directly.
 package commerce
 
-import "time"
+import (
+	"time"
+
+	"github.com/Tee-Stark/enquoir-go/internal/money"
+)
+
+// Currency is one of the three currencies Enquoir supports. It is the
+// same type as enquoir.Currency (both alias internal/money.Currency),
+// so a value built from either package works interchangeably.
+type Currency = money.Currency
+
+const (
+	USD = money.USD
+	EUR = money.EUR
+	GBP = money.GBP
+)
 
 // CommerceStatus is whether a customer, agent or funding method may
 // take part in commerce.
