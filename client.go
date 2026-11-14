@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Tee-Stark/enquoir-go/commerce"
 	"github.com/Tee-Stark/enquoir-go/internal/transport"
 )
 
@@ -73,10 +74,20 @@ func NewTreasuryClient(apiKey string, opts ...Option) *TreasuryClient {
 // integration - everything a merchant key (enq_mk_...) can reach.
 type MerchantClient struct {
 	transport *transport.Client
+
+	Customers      *commerce.Customers
+	MerchantAgents *commerce.MerchantAgents
+	FundingMethods *commerce.FundingMethods
 }
 
 // NewMerchantClient builds a MerchantClient authenticating with the given
 // merchant integration key.
 func NewMerchantClient(apiKey string, opts ...Option) *MerchantClient {
-	return &MerchantClient{transport: transport.New(newConfig(apiKey, opts))}
+	t := transport.New(newConfig(apiKey, opts))
+	return &MerchantClient{
+		transport:      t,
+		Customers:      commerce.NewCustomers(t),
+		MerchantAgents: commerce.NewMerchantAgents(t),
+		FundingMethods: commerce.NewFundingMethods(t),
+	}
 }
