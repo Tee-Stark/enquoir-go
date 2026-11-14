@@ -79,6 +79,8 @@ type MerchantClient struct {
 	MerchantAgents *commerce.MerchantAgents
 	FundingMethods *commerce.FundingMethods
 	Mandates       *commerce.Mandates
+	Checkouts      *commerce.Checkouts
+	Grants         *commerce.Grants
 }
 
 // NewMerchantClient builds a MerchantClient authenticating with the given
@@ -91,5 +93,7 @@ func NewMerchantClient(apiKey string, opts ...Option) *MerchantClient {
 		MerchantAgents: commerce.NewMerchantAgents(t),
 		FundingMethods: commerce.NewFundingMethods(t),
 		Mandates:       commerce.NewMandates(t),
+		Checkouts:      commerce.NewCheckouts(t),
+		Grants:         commerce.NewGrants(t),
 	}
 }
