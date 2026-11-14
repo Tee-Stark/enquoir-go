@@ -53,12 +53,20 @@ func newConfig(apiKey string, opts []Option) transport.Config {
 // agent - everything an agent key (enq_sk_...) can reach.
 type TreasuryClient struct {
 	transport *transport.Client
+
+	Payments      *Payments
+	Beneficiaries *Beneficiaries
 }
 
 // NewTreasuryClient builds a TreasuryClient authenticating with the given
 // agent key.
 func NewTreasuryClient(apiKey string, opts ...Option) *TreasuryClient {
-	return &TreasuryClient{transport: transport.New(newConfig(apiKey, opts))}
+	t := transport.New(newConfig(apiKey, opts))
+	return &TreasuryClient{
+		transport:     t,
+		Payments:      &Payments{transport: t},
+		Beneficiaries: &Beneficiaries{transport: t},
+	}
 }
 
 // MerchantClient runs merchant-delegated commerce for one merchant
